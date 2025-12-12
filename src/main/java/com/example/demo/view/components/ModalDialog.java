@@ -26,7 +26,7 @@ public class ModalDialog {
         dialogStage.setTitle(title);
 
         BorderPane root = new BorderPane();
-        root.setPrefSize(500, 400);
+        root.setPrefSize(850, 600);
 
         // Header
         Label titleLabel = new Label(title);
@@ -81,4 +81,6 @@ public class ModalDialog {
     public VBox getContentArea() {
         return content;
     }
+
+
 }

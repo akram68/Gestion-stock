@@ -13,7 +13,6 @@ public class UserForm {
     private TextField usernameField;
     private PasswordField passwordField;
     private TextField fullNameField;
-    private TextField emailField;
     private ComboBox<String> roleCombo;
     private ComboBox<String> statusCombo;
 
@@ -47,23 +46,14 @@ public class UserForm {
         fullNameField.setPromptText("Prénom Nom");
         grid.add(fullNameField, 1, 1);
 
-        grid.add(new Label("Email:"), 2, 1);
-        emailField = new TextField();
-        emailField.setPromptText("email@exemple.com");
-        grid.add(emailField, 3, 1);
+        grid.add(new Label("Rôle:"), 2, 1);
+        roleCombo = new ComboBox<>();
+        roleCombo.getItems().addAll("Admin", "Vendeur"); // Simplifié à 2 rôles
+        roleCombo.setPromptText("Choisir un rôle");
+        grid.add(roleCombo, 3, 1);
 
         // Row 2
-        grid.add(new Label("Rôle:"), 0, 2);
-        roleCombo = new ComboBox<>();
-        roleCombo.getItems().addAll("Administrateur", "Gestionnaire", "Vendeur", "Observateur");
-        roleCombo.setPromptText("Choisir un rôle");
-        grid.add(roleCombo, 1, 2);
 
-        grid.add(new Label("Statut:"), 2, 2);
-        statusCombo = new ComboBox<>();
-        statusCombo.getItems().addAll("Actif", "Inactif", "Suspendu");
-        statusCombo.setPromptText("Choisir un statut");
-        grid.add(statusCombo, 3, 2);
 
         form.getChildren().add(grid);
     }
@@ -72,7 +62,6 @@ public class UserForm {
     public String getUsername() { return usernameField.getText(); }
     public String getPassword() { return passwordField.getText(); }
     public String getFullName() { return fullNameField.getText(); }
-    public String getEmail() { return emailField.getText(); }
     public String getRole() { return roleCombo.getValue(); }
     public String getStatus() { return statusCombo.getValue(); }
 
