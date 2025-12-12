@@ -42,7 +42,7 @@ public class NavigationService {
     }
 
     private static void switchScene(javafx.scene.Parent root, String title) {
-        Scene scene = new Scene(root, 1200, 700);
+        Scene scene = new Scene(root, 1200, 1000);
         primaryStage.setTitle(title);
         primaryStage.setScene(scene);
     }
