@@ -1,7 +1,6 @@
 package com.example.demo.util;
 
 import com.example.demo.view.components.AchatForm;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -17,7 +16,11 @@ import java.util.List;
 
 public class FacturePDFGenerator {
 
-    public static void genererFactureAchat(
+    /**
+     * ✅ NOUVELLE MÉTHODE : Génère ET OUVRE DIRECTEMENT la facture
+     * Sans dialogue "Enregistrer sous"
+     */
+    public static void genererEtOuvrirFactureDirect(
             int numeroAchat,
             String fournisseur,
             LocalDate date,
@@ -28,31 +31,18 @@ public class FacturePDFGenerator {
             Stage parentStage) {
 
         try {
-            System.out.println("🚀 Début génération facture #" + numeroAchat);
-            System.out.println("📊 Nombre de produits : " + (produits != null ? produits.size() : 0));
+            System.out.println("🚀 Début génération directe facture #" + numeroAchat);
 
-            // 1. Choisir l'emplacement
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Enregistrer la facture PDF");
-            fileChooser.getExtensionFilters().add(
-                    new FileChooser.ExtensionFilter("PDF Files", "*.pdf")
-            );
-            fileChooser.setInitialFileName("facture_achat_" + numeroAchat + "_" +
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")) + ".pdf");
-
-            File file = fileChooser.showSaveDialog(parentStage);
-
-            if (file == null) {
-                System.out.println("❌ Annulé par l'utilisateur");
-                return;
-            }
+            // 1. ✅ CRÉER FICHIER TEMPORAIRE (sans dialogue)
+            File tempFile = File.createTempFile("facture_achat_" + numeroAchat + "_", ".pdf");
+            tempFile.deleteOnExit(); // ✅ Supprime automatiquement à la fin
 
             // 2. Créer le document
             PDDocument document = new PDDocument();
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
 
-            // 3. Écrire le contenu
+            // 3. Écrire le contenu (CODE IDENTIQUE)
             PDPageContentStream content = new PDPageContentStream(document, page);
 
             // Position initiale
@@ -165,7 +155,7 @@ public class FacturePDFGenerator {
             content.setNonStrokingColor(240, 240, 240);
             content.addRect(marge, y - 5, 500, 20);
             content.fill();
-            content.setNonStrokingColor(0, 0, 0); // Réinitialiser la couleur
+            content.setNonStrokingColor(0, 0, 0);
 
             // Position des colonnes
             float[] colPositions = {marge, marge + 150, marge + 220, marge + 290, marge + 360, marge + 430};
@@ -260,7 +250,6 @@ public class FacturePDFGenerator {
                 y -= 20;
 
             } else {
-                // Aucun produit
                 content.beginText();
                 content.newLineAtOffset(marge, y);
                 content.showText("Aucun produit enregistré pour cet achat.");
@@ -319,7 +308,7 @@ public class FacturePDFGenerator {
             content.showText(String.format("%.2f DZD", resteAPayer));
             content.endText();
 
-            content.setNonStrokingColor(0, 0, 0); // Réinitialiser la couleur
+            content.setNonStrokingColor(0, 0, 0); // Réinitialiser
             y -= 30;
 
             // Ligne de séparation double
@@ -367,21 +356,20 @@ public class FacturePDFGenerator {
                     DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm")));
             content.endText();
 
-            // 4. Fermer et sauvegarder
+            // 4. Fermer et sauvegarder dans fichier temporaire
             content.close();
-            document.save(file);
+            document.save(tempFile);
             document.close();
 
-            System.out.println("✅ PDF généré avec succès: " + file.getAbsolutePath());
+            System.out.println("✅ PDF généré temporairement: " + tempFile.getAbsolutePath());
 
-            // 5. Ouvrir le PDF
-            ouvrirPDF(file);
+            // 5. ✅ OUVRIR DIRECTEMENT avec l'application PDF du système
+            ouvrirPDFDirect(tempFile);
 
         } catch (Exception e) {
-            System.err.println("❌ ERREUR lors de la génération du PDF:");
+            System.err.println("❌ ERREUR génération PDF direct:");
             e.printStackTrace();
 
-            // Afficher une alerte JavaFX
             javafx.application.Platform.runLater(() -> {
                 javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
                         javafx.scene.control.Alert.AlertType.ERROR);
@@ -393,13 +381,45 @@ public class FacturePDFGenerator {
         }
     }
 
-    private static void ouvrirPDF(File file) {
+    /**
+     * ✅ MÉTHODE AMÉLIORÉE : Ouvre directement le PDF
+     */
+    private static void ouvrirPDFDirect(File file) {
         try {
             if (java.awt.Desktop.isDesktopSupported()) {
                 java.awt.Desktop.getDesktop().open(file);
+                System.out.println("✅ PDF ouvert directement avec l'application système");
+            } else {
+                System.err.println("⚠️ Desktop non supporté");
             }
         } catch (Exception e) {
             System.err.println("⚠️ Impossible d'ouvrir le PDF: " + e.getMessage());
+
+            // Fallback : message d'erreur
+            javafx.application.Platform.runLater(() -> {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.WARNING);
+                alert.setTitle("PDF généré");
+                alert.setHeaderText("PDF créé mais impossible de l'ouvrir automatiquement");
+                alert.setContentText("Fichier: " + file.getAbsolutePath());
+                alert.showAndWait();
+            });
+        }
+    }
+
+    /**
+     * 🗑️ MÉTHODE OPTIONNELLE : Nettoyage des fichiers temporaires
+     * (Appeler périodiquement ou à la fermeture de l'app)
+     */
+    public static void nettoyerFichiersTemporaires() {
+        File tempDir = new File(System.getProperty("java.io.tmpdir"));
+        File[] tempFiles = tempDir.listFiles((dir, name) ->
+                name.startsWith("facture_achat_") && name.endsWith(".pdf"));
+
+        if (tempFiles != null) {
+            for (File file : tempFiles) {
+                file.delete();
+            }
         }
     }
 }
